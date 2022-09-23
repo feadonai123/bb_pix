@@ -1,9 +1,13 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import Pix from "./src/services/pix.js";
+import Pix from "./src/index.js";
 
 (async () => {
-  const pixDriver = new Pix("dev");
+  const pixDriver = new Pix({
+    ambiente: "dev",
+    appKey: process.env.DEVELOPER_APPLICATION_KEY,
+    clientBasic: process.env.CLIENT_BASIC,
+  });
 
   const cobrancaExample = {
     calendario: {

@@ -2,20 +2,21 @@ import RequestHelper from "../utils/requestHelper.js";
 
 class Pix {
 
-
+  urlHomolog = "https://api.hm.bb.com.br/pix/v1"
+  urlProd = "https://api.bb.com.br/pix/v1"
+  urlAuth = "https://oauth.hm.bb.com.br"
   loading = false
   expires_at = 0
   token = ""
 
-  constructor(server = "dev") {
-    this.urlPix = server == "dev" ? process.env.PIX_HOMOLOG_API : process.env.PIX_PROD_API;
-    this.urlAuth = process.env.BB_AUTH;
-
-    this.defaultQuery = {
-      "gw-dev-app-key" : process.env.DEVELOPER_APPLICATION_KEY,
-    }
-    
-    this.basicAuth = process.env.CLIENT_BASIC;
+  constructor({
+    ambiente = "dev",
+    appKey = "d27b47790dffab001366e17d70050b56b921a5be",
+    clientBasic
+  }) {
+    this.urlPix = ambiente == "dev" ? this.urlHomolog : this.urlProd;
+    this.defaultQuery = { "gw-dev-app-key" : appKey }
+    this.basicAuth = clientBasic;
   }
 
   async getToken(){
