@@ -23,10 +23,9 @@ class RequestHelper {
 
       return { success: true, data: json };
     } catch (e) {
-      console.log("ERRO " + url, e);
       return {
         success: false,
-        message: e.message || e.title || e.error || "",
+        message: e.message || e.title || e.error || e.razao || "",
         data: e,
       };
     }
@@ -42,6 +41,10 @@ class RequestHelper {
 
   static async put(url, data, header = {}) {
     return this.doFetch({ url, method: "PUT", data, header });
+  }
+
+  static async patch(url, data, header = {}) {
+    return this.doFetch({ url, method: "PATCH", data, header });
   }
 }
 

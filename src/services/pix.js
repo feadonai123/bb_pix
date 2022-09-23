@@ -2,6 +2,11 @@ import RequestHelper from "../utils/requestHelper.js";
 
 class Pix {
 
+
+  loading = false
+  expires_at = 0
+  token = ""
+
   constructor(server = "dev") {
     this.urlPix = server == "dev" ? process.env.PIX_HOMOLOG_API : process.env.PIX_PROD_API;
     this.urlAuth = process.env.BB_AUTH;
@@ -11,17 +16,17 @@ class Pix {
     }
     
     this.basicAuth = process.env.CLIENT_BASIC;
-    this.token = "";
-    this.expires_at = 0
   }
 
   async getToken(){
-    if(this.expires_at < new Date().getTime()){
+    while(this.loading) await new Promise(resolve => setTimeout(resolve, 1000));
+    if(this.expires_at < new Date().getTime() && !this.loading){
       await this.refreshToken()
     }
   }
 
   async refreshToken() {
+    this.loading = true
     const 
       url = `${this.urlAuth}/oauth/token`,
       body = {
@@ -45,7 +50,26 @@ class Pix {
       this.expires_at = new Date().getTime() + expires_in * 1000;
     }
 
-    return { success, message, data };
+    this.loading = false
+    if(!success) throw new Error(message)
+    return data;
+  }
+
+  async criarCobrancaQRCODE(dataSend) {
+    await this.getToken()
+    const 
+      txid = "",
+      body = dataSend,
+      header = {
+        Authorization: `Bearer ${this.token}`,
+      },
+      query = this.defaultQuery,
+      queryFormat = new URLSearchParams(query),
+      url = `${this.urlPix}/cobqrcode/${txid}?${queryFormat}`,
+      { success, message, data } = await RequestHelper.put(url, body, header);
+
+    if(!success) throw new Error(message)
+    return data;
   }
 
   async criarCobranca(dataSend) {
@@ -61,10 +85,42 @@ class Pix {
       url = `${this.urlPix}/cob/${txid}?${queryFormat}`,
       { success, message, data } = await RequestHelper.put(url, body, header);
 
-    return { success, message, data };
+    if(!success) throw new Error(message)
+    return data;
   }
 
-  async consultarPix(inicio, fim) {
+  async atualizarCobranca(txid, newData) {
+    await this.getToken()
+    const 
+      body = newData,
+      header = {
+        Authorization: `Bearer ${this.token}`,
+      },
+      query = this.defaultQuery,
+      queryFormat = new URLSearchParams(query),
+      url = `${this.urlPix}/cob/${txid}?${queryFormat}`,
+      { success, message, data } = await RequestHelper.patch(url, body, header);
+
+    if(!success) throw new Error(message)
+    return data;
+  }
+
+  async consultarCobrancaPorTxid(txid) {
+    await this.getToken()
+    const 
+      header = {
+        Authorization: `Bearer ${this.token}`,
+      },
+      query = this.defaultQuery,
+      queryFormat = new URLSearchParams(query),
+      url = `${this.urlPix}/cob/${txid}?${queryFormat}`,
+      { success, message, data } = await RequestHelper.get(url, header);
+
+    if(!success) throw new Error(message)
+    return data;
+  }
+
+  async consultarPixRecebidos(inicio, fim) {
     await this.getToken()
     const 
       query = {
@@ -80,7 +136,46 @@ class Pix {
       url = `${this.urlPix}?${queryFormat}`,
       { success, message, data } = await RequestHelper.get(url, header);
     
-    return { success, message, data };
+    if(!success) throw new Error(message)
+    return data;
+  }
+
+  async consultarPixPorE2EId(e2eid) {
+    await this.getToken()
+    const 
+      query = this.defaultQuery,
+      queryFormat = new URLSearchParams(query),
+      header = {
+        Authorization: `Bearer ${this.token}`,
+      },
+      url = `${this.urlPix}/pix/${e2eid}?${queryFormat}`,
+      { success, message, data } = await RequestHelper.get(url, header);
+    
+    if(!success) throw new Error(message)
+    return data;
+  }
+
+  async simularPagamento(textoImagemQRcode){
+    await this.getToken()
+    const 
+      body = {
+        pix: textoImagemQRcode,
+      },
+      query = this.defaultQuery,
+      queryFormat = new URLSearchParams(query),
+      url = `${process.env.API_SIMULAR_PAGAMENTO}/boletos-pix/pagar?${queryFormat}`
+
+    let success = false, data, message, cont = 0
+    while(!success && cont < 5){
+      const response = await RequestHelper.post(url, body);
+      success = response.success
+      data = response.data
+      message = response.message
+      cont ++
+    }
+    
+    if(!success) throw new Error(message)
+    return data;
   }
 }
 
