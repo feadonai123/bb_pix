@@ -1,13 +1,18 @@
-import * as dotenv from "dotenv";
-dotenv.config();
 import Pix from "./src/index.js";
+import fs from "fs";
+
+/*
+  Para funcionamento do módulo, adicioanr as variáveis de ambiente abaixo no arquivo .env
+  - CLIENT_BASIC
+  - DEVELOPER_APPLICATION_KEY
+*/
 
 (async () => {
   const pixDriver = new Pix({
-    ambiente: "dev",
-    appKey: process.env.DEVELOPER_APPLICATION_KEY,
-    clientBasic: process.env.CLIENT_BASIC,
+    ambiente: "dev"
   });
+
+  let json = {}
 
   const cobrancaExample = {
     calendario: {
@@ -20,34 +25,30 @@ import Pix from "./src/index.js";
     valor: {
       original: "1.45",
     },
-    chave: process.env.CHAVE_PIX,
+    chave: "7f6844d0-de89-47e5-9ef7-e0a35a681615",
     solicitacaoPagador: "Cobrança dos serviços prestados.",
   }
 
   try{
-    //const criarCobranca = await pixDriver.criarCobranca(cobrancaExample)
     const 
       cobrancaCriada = await pixDriver.criarCobrancaQRCODE(cobrancaExample),
       cobrancaAtualizada = await pixDriver.atualizarCobranca(cobrancaCriada.txid, { solicitacaoPagador: "ALTERADO" }),
       consultarCobrancaCriada = await pixDriver.consultarCobrancaPorTxid(cobrancaAtualizada.txid)
-    console.log({
-      cobrancaCriada,
-      cobrancaAtualizada,
-      consultarCobrancaCriada,
-    })
 
-    //await pixDriver.simularPagamento(cobrancaCriada.textoImagemQRcode)
+    json["cobrancaCriada"] = cobrancaCriada
+    json["cobrancaAtualizada"] = cobrancaAtualizada
+    json["consultarCobrancaCriada"] = consultarCobrancaCriada
 
-    console.log('\n\n\n')
+    await pixDriver.simularPagamento(cobrancaCriada.textoImagemQRcode)
+
     const 
-      pixRecebidos = await pixDriver.consultarPixRecebidos("2022-09-19T12:39:17.102Z", "2022-09-23T12:39:17.102Z"),
-      consultarCobrancaPaga = await pixDriver.consultarCobrancaPorTxid(pixRecebidos.pix[0].txid),
-      consultarPix = await pixDriver.consultarPixPorE2EId(pixRecebidos.pix[0].endToEndId)
-    console.log({
-      pixRecebidos,
-      consultarCobrancaPaga,
-      consultarPix,
-    })
+      pixRecebidos = await pixDriver.consultarPixRecebidos("2022-12-06T12:39:17.102Z", "2022-12-09T12:39:17.102Z"),
+      consultarCobrancaPaga = await pixDriver.consultarCobrancaPorTxid(pixRecebidos.pix[0].txid)
+
+    json["pixRecebidos"] = pixRecebidos
+    json["consultarCobrancaPaga"] = consultarCobrancaPaga
+
+    fs.writeFileSync('sample.json', JSON.stringify(json, null, 2))
   }catch(e){
     console.log("ERRO", e)
   }

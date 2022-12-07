@@ -25,7 +25,7 @@ class RequestHelper {
     } catch (e) {
       return {
         success: false,
-        message: e.message || e.title || e.error || e.razao || "",
+        message: e.message || e.title || e.error || e.razao || e?.erros.map(e=>e.mensagem).join(', '),
         data: e,
       };
     }

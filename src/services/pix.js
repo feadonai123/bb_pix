@@ -5,14 +5,15 @@ class Pix {
   urlHomolog = "https://api.hm.bb.com.br/pix/v1"
   urlProd = "https://api.bb.com.br/pix/v1"
   urlAuth = "https://oauth.hm.bb.com.br"
+  apiSimularPagamento = "https://api.hm.bb.com.br/testes-portal-desenvolvedor/v1"
   loading = false
   expires_at = 0
   token = ""
 
   constructor({
     ambiente = "dev",
-    appKey = "d27b47790dffab001366e17d70050b56b921a5be",
-    clientBasic
+    appKey = process.env.DEVELOPER_APPLICATION_KEY,
+    clientBasic = process.env.CLIENT_BASIC
   }) {
     this.urlPix = ambiente == "dev" ? this.urlHomolog : this.urlProd;
     this.defaultQuery = { "gw-dev-app-key" : appKey }
@@ -122,6 +123,9 @@ class Pix {
   }
 
   async consultarPixRecebidos(inicio, fim) {
+    /*
+      diferença entre inicio e fim deve ser menor que 5 dias
+    */
     await this.getToken()
     const 
       query = {
@@ -164,7 +168,7 @@ class Pix {
       },
       query = this.defaultQuery,
       queryFormat = new URLSearchParams(query),
-      url = `${process.env.API_SIMULAR_PAGAMENTO}/boletos-pix/pagar?${queryFormat}`
+      url = `${this.apiSimularPagamento}/boletos-pix/pagar?${queryFormat}`
 
     let success = false, data, message, cont = 0
     while(!success && cont < 5){
